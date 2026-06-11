@@ -15,13 +15,13 @@ const FUEL_TYPES = [
   { id: 'LPG', label: 'LPG' },
 ];
 
-export default function FuelPricePage() {
+export default function FuelPricePage({ initialFuelType = 'U91' }) {
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [selectedStation, setSelectedStation] = useState(null);
-  const [fuelType, setFuelType] = useState('U91');
+  const [fuelType, setFuelType] = useState(initialFuelType);
   const [searchCoords, setSearchCoords] = useState(null);
 
   const doSearch = useCallback(async (lat, lng, type) => {
@@ -78,6 +78,10 @@ export default function FuelPricePage() {
   const avgPrice = stations.length > 0
     ? stations.reduce((sum, s) => sum + s.price, 0) / stations.length
     : 0;
+  const expensive = stations.length > 0 ? stations[stations.length - 1] : null;
+  const savings = cheapest && expensive
+    ? ((expensive.price - cheapest.price) * 100).toFixed(1)
+    : '0';
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -128,7 +132,7 @@ export default function FuelPricePage() {
 
       {/* Price Summary */}
       {stations.length > 0 && !loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div
             className="rounded-2xl p-4 text-center"
             style={{
@@ -156,6 +160,19 @@ export default function FuelPricePage() {
             <p className="text-xs text-gray-400 mb-1">Average</p>
             <p className="text-2xl font-bold" style={{ color: '#FFD700' }}>
               {(avgPrice * 100).toFixed(1)}
+              <span className="text-xs text-gray-400 ml-0.5">¢/L</span>
+            </p>
+          </div>
+          <div
+            className="rounded-2xl p-4 text-center"
+            style={{
+              background: '#0D2B5E',
+              border: '1px solid rgba(255,215,0,0.2)',
+            }}
+          >
+            <p className="text-xs text-gray-400 mb-1">You Could Save</p>
+            <p className="text-2xl font-bold" style={{ color: '#2ECC71' }}>
+              {savings}
               <span className="text-xs text-gray-400 ml-0.5">¢/L</span>
             </p>
           </div>
@@ -203,10 +220,11 @@ export default function FuelPricePage() {
       {/* Station Cards */}
       {!loading && stations.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {stations.map((station) => (
+          {stations.map((station, i) => (
             <FuelStationCard
               key={station.id}
               station={station}
+              rank={i}
               isSelected={selectedStation?.id === station.id}
               onClick={() => setSelectedStation(station)}
             />
